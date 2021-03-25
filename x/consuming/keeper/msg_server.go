@@ -43,8 +43,12 @@ func (k Keeper) RequestData(goCtx context.Context, msg *types.MsgRequestData) (*
 		"consuming",
 		bandoracle.OracleScriptID(msg.OracleScriptID),
 		msg.Calldata,
-		uint64(msg.AskCount),
-		uint64(msg.MinCount),
+		msg.AskCount,
+		msg.MinCount,
+		msg.FeeLimit,
+		msg.RequestKey,
+		msg.PrepareGas,
+		msg.ExecuteGas,
 	)
 	channelCap, ok := k.scopedKeeper.GetCapability(ctx, host.ChannelCapabilityPath(sourcePort, msg.SourceChannel))
 	if !ok {
