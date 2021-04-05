@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"time"
 
 	bandoracle "github.com/bandprotocol/chain/x/oracle/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -61,8 +62,8 @@ func (k Keeper) RequestData(goCtx context.Context, msg *types.MsgRequestData) (*
 		msg.SourceChannel,
 		destinationPort,
 		destinationChannel,
-		clienttypes.NewHeight(0, 10000),
-		0, // Arbitrarily high timeout for now
+		clienttypes.NewHeight(0, 0),
+		uint64(ctx.BlockTime().UnixNano()+int64(20*time.Minute)), // Arbitrarily high timeout for now
 	))
 	if err != nil {
 		return nil, err
