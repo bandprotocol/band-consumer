@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	bandoracle "github.com/bandprotocol/chain/x/oracle/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	clienttypes "github.com/cosmos/cosmos-sdk/x/ibc/core/02-client/types"
@@ -40,23 +39,24 @@ func (k Keeper) RequestData(goCtx context.Context, msg *types.MsgRequestData) (*
 		)
 	}
 	sourcePort := "consuming"
-	packet := bandoracle.NewOracleRequestPacketData(
-		"consuming",
-		bandoracle.OracleScriptID(msg.OracleScriptID),
-		msg.Calldata,
-		msg.AskCount,
-		msg.MinCount,
-		msg.FeeLimit,
-		msg.RequestKey,
-		msg.PrepareGas,
-		msg.ExecuteGas,
-	)
+	// packet := bandoracle.NewOracleRequestPacketData(
+	// 	"consuming",
+	// 	bandoracle.OracleScriptID(msg.OracleScriptID),
+	// 	msg.Calldata,
+	// 	msg.AskCount,
+	// 	msg.MinCount,
+	// 	msg.FeeLimit,
+	// 	msg.RequestKey,
+	// 	msg.PrepareGas,
+	// 	msg.ExecuteGas,
+	// )
+	packet := msg
 	channelCap, ok := k.scopedKeeper.GetCapability(ctx, host.ChannelCapabilityPath(sourcePort, msg.SourceChannel))
 	if !ok {
 		return nil, sdkerrors.Wrap(channeltypes.ErrChannelCapabilityNotFound, "module does not own channel capability")
 	}
 	err := k.channelKeeper.SendPacket(ctx, channelCap, channeltypes.NewPacket(
-		packet.GetBytes(),
+		packet.GetSignBytes(),
 		sequence,
 		sourcePort,
 		msg.SourceChannel,

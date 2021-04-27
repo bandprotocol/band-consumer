@@ -14,6 +14,7 @@ func NewMsgRequestData(
 	askCount uint64,
 	minCount uint64,
 	feeLimit sdk.Coins,
+	requestKey string,
 	prepareGas uint64,
 	executeGas uint64,
 	sender sdk.AccAddress,
@@ -25,9 +26,10 @@ func NewMsgRequestData(
 		AskCount:       askCount,
 		MinCount:       minCount,
 		FeeLimit:       feeLimit,
-		Sender:         sender.String(),
+		RequestKey:     requestKey,
 		PrepareGas:     prepareGas,
 		ExecuteGas:     executeGas,
+		Sender:         sender.String(),
 	}
 }
 
