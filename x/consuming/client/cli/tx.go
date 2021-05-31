@@ -103,12 +103,12 @@ $ %s tx consuming request 1 --calldata 1234abcdef --requested-validator-count 4 
 				return err
 			}
 
-			coinStr, err := cmd.Flags().GetString(flagFeeLimit)
+			feeLimit, err := cmd.Flags().GetString(flagFeeLimit)
 			if err != nil {
 				return err
 			}
 
-			feeLimit, err := sdk.ParseCoinsNormalized(coinStr)
+			coinStr, err := sdk.ParseCoinsNormalized(coinStr)
 			if err != nil {
 				return err
 			}
