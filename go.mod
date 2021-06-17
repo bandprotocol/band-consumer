@@ -3,7 +3,7 @@ module github.com/bandprotocol/band-consumer
 go 1.15
 
 require (
-	github.com/bandprotocol/chain v1.0.1-0.20210303101055-beef98038fd3
+	github.com/bandprotocol/chain v1.0.1-0.20210610071607-8cf6dc4d2412
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cosmos/cosmos-sdk v0.42.4
@@ -24,5 +24,3 @@ require (
 )
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-
-replace github.com/bandprotocol/chain => ../chain
