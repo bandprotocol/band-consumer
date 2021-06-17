@@ -22,7 +22,7 @@ const (
 	PortKey = ModuleName
 
 	// Version
-	Version = "ics20-1"
+	Version = "bandchain-1"
 )
 
 var (
