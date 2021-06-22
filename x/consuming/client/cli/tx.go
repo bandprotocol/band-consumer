@@ -5,10 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	bandoracle "github.com/bandprotocol/chain/x/oracle/types"
+	bandoracle "github.com/bandprotocol/chain/v2/x/oracle/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/spf13/cobra"
 
@@ -16,11 +17,15 @@ import (
 )
 
 const (
-	flagName     = "name"
-	flagCalldata = "calldata"
-	flagAskCount = "ask-count"
-	flagMinCount = "min-count"
-	flagChannel  = "channel"
+	flagName       = "name"
+	flagCalldata   = "calldata"
+	flagAskCount   = "ask-count"
+	flagMinCount   = "min-count"
+	flagChannel    = "channel"
+	flagPrepareGas = "prepare-gas"
+	flagExecuteGas = "execute-gas"
+	flagFeeLimit   = "fee-limit"
+	flagRequestkey = "request-key"
 )
 
 // NewTxCmd returns the transaction commands for this module
@@ -40,14 +45,14 @@ func NewTxCmd() *cobra.Command {
 // NewRequestTxCmd implements the request command handler.
 func NewRequestTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "request [oracle-script-id] (-c [calldata]) (-r [requested-validator-count]) (-v [sufficient-validator-count]) (-x [expiration]) (-w [prepare-gas]) (-g [execute-gas])",
+		Use:   "request [oracle-script-id] [requested-validator-count] [sufficient-validator-count] (-c [calldata])  (-x [expiration]) (-w [prepare-gas]) (-g [execute-gas]) (-r [request-key])",
 		Short: "Make a new data request via an existing oracle script",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(3),
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`Make a new request via an existing oracle script with the configuration flags.
 Example:
-$ %s tx consuming request 1 -c 1234abcdef -r 4 -v 3 -x 20 -w 50 -g 5000 --from mykey
-$ %s tx consuming request 1 --calldata 1234abcdef --requested-validator-count 4 --sufficient-validator-count 3 --expiration 20 --prepare-gas 50 --execute-gas 5000 --from mykey
+$ %s tx consuming request 1 -c 1234abcdef -r 4 -v 3 -x 20 -w 50 -g 5000 -r requestkey --from mykey
+$ %s tx consuming request 1 --calldata 1234abcdef --requested-validator-count 4 --sufficient-validator-count 3 --expiration 20 --prepare-gas 50 --execute-gas 5000 --request-key requestkey --from mykey
 `,
 				version.AppName, version.AppName,
 			),
@@ -64,17 +69,16 @@ $ %s tx consuming request 1 --calldata 1234abcdef --requested-validator-count 4 
 			}
 			oracleScriptID := bandoracle.OracleScriptID(int64OracleScriptID)
 
+			askCount, err := strconv.ParseUint(args[1], 10, 64)
+			if err != nil {
+				return err
+			}
+			minCount, err := strconv.ParseUint(args[2], 10, 64)
+			if err != nil {
+				return err
+			}
+
 			calldata, err := cmd.Flags().GetBytesHex(flagCalldata)
-			if err != nil {
-				return err
-			}
-
-			requestedValidatorCount, err := cmd.Flags().GetInt64(flagAskCount)
-			if err != nil {
-				return err
-			}
-
-			sufficientValidatorCount, err := cmd.Flags().GetInt64(flagMinCount)
 			if err != nil {
 				return err
 			}
@@ -84,12 +88,41 @@ $ %s tx consuming request 1 --calldata 1234abcdef --requested-validator-count 4 
 				return err
 			}
 
+			prepareGas, err := cmd.Flags().GetUint64(flagPrepareGas)
+			if err != nil {
+				return err
+			}
+
+			executeGas, err := cmd.Flags().GetUint64(flagExecuteGas)
+			if err != nil {
+				return err
+			}
+
+			requestKey, err := cmd.Flags().GetString(flagRequestkey)
+			if err != nil {
+				return err
+			}
+
+			coinStr, err := cmd.Flags().GetString(flagFeeLimit)
+			if err != nil {
+				return err
+			}
+
+			feeLimit, err := sdk.ParseCoinsNormalized(coinStr)
+			if err != nil {
+				return err
+			}
+
 			msg := types.NewMsgRequestData(
 				oracleScriptID,
 				channel,
 				calldata,
-				requestedValidatorCount,
-				sufficientValidatorCount,
+				askCount,
+				minCount,
+				feeLimit,
+				requestKey,
+				prepareGas,
+				executeGas,
 				clientCtx.GetFromAddress(),
 			)
 
@@ -103,13 +136,12 @@ $ %s tx consuming request 1 --calldata 1234abcdef --requested-validator-count 4 
 	}
 
 	cmd.Flags().BytesHexP(flagCalldata, "c", nil, "Calldata used in calling the oracle script")
-	cmd.Flags().Int64P(flagAskCount, "r", 0, "Number of top validators that need to report data for this request")
-	cmd.MarkFlagRequired(flagAskCount)
-	cmd.Flags().Int64P(flagMinCount, "v", 0, "Minimum number of reports sufficient to conclude the request's result")
-	cmd.MarkFlagRequired(flagMinCount)
 	cmd.Flags().String(flagChannel, "", "The channel id.")
 	cmd.MarkFlagRequired(flagChannel)
-
+	cmd.Flags().Uint64(flagPrepareGas, 50000, "Prepare gas used in fee counting for prepare request")
+	cmd.Flags().Uint64(flagExecuteGas, 300000, "Execute gas used in fee counting for execute request")
+	cmd.Flags().String(flagFeeLimit, "", "the maximum tokens that will be paid to all data source providers")
+	cmd.Flags().String(flagRequestkey, "", "Key for generating escrow address")
 	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd

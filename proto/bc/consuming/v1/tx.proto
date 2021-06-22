@@ -4,6 +4,7 @@ package bc.consuming.v1;
 option go_package = "github.com/bandprotocol/band-consumer/x/consuming/types";
 
 import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 // Msg defines the consuming Msg service.
 service Msg {
@@ -23,9 +24,18 @@ message MsgRequestData {
   string source_channel = 2
       [ (gogoproto.moretags) = "yaml:\"source_channel\"" ];
   bytes calldata = 3;
-  int64 ask_count = 4 [ (gogoproto.moretags) = "yaml:\"ask_count\"" ];
-  int64 min_count = 5 [ (gogoproto.moretags) = "yaml:\"min_count\"" ];
-  string sender = 6;
+  uint64 ask_count = 4 [ (gogoproto.moretags) = "yaml:\"ask_count\"" ];
+  uint64 min_count = 5 [ (gogoproto.moretags) = "yaml:\"min_count\"" ];
+  repeated cosmos.base.v1beta1.Coin fee_limit = 6 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  string request_key = 7;
+  // PrepareGas is amount of gas to pay to prepare raw requests
+  uint64 prepare_gas = 8;
+  // ExecuteGas is amount of gas to reserve for executing
+  uint64 execute_gas = 9;
+  string sender = 10;
 }
 
 // MsgRequestDataResponse defines the Msg/RequestData response type.

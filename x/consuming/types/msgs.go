@@ -1,7 +1,7 @@
 package types
 
 import (
-	bandoracle "github.com/bandprotocol/chain/x/oracle/types"
+	bandoracle "github.com/bandprotocol/chain/v2/x/oracle/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -11,8 +11,12 @@ func NewMsgRequestData(
 	oracleScriptID bandoracle.OracleScriptID,
 	sourceChannel string,
 	calldata []byte,
-	askCount int64,
-	minCount int64,
+	askCount uint64,
+	minCount uint64,
+	feeLimit sdk.Coins,
+	requestKey string,
+	prepareGas uint64,
+	executeGas uint64,
 	sender sdk.AccAddress,
 ) *MsgRequestData {
 	return &MsgRequestData{
@@ -21,6 +25,10 @@ func NewMsgRequestData(
 		Calldata:       calldata,
 		AskCount:       askCount,
 		MinCount:       minCount,
+		FeeLimit:       feeLimit,
+		RequestKey:     requestKey,
+		PrepareGas:     prepareGas,
+		ExecuteGas:     executeGas,
 		Sender:         sender.String(),
 	}
 }

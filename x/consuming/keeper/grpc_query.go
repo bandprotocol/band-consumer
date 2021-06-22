@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/bandprotocol/band-consumer/x/consuming/types"
-	bandoracle "github.com/bandprotocol/chain/x/oracle/types"
+	bandoracle "github.com/bandprotocol/chain/v2/x/oracle/types"
 )
 
 var _ types.QueryServer = Keeper{}

@@ -3,7 +3,7 @@ package types
 import (
 	"encoding/binary"
 
-	bandoracle "github.com/bandprotocol/chain/x/oracle/types"
+	bandoracle "github.com/bandprotocol/chain/v2/x/oracle/types"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 	PortKey = ModuleName
 
 	// Version
-	Version = "ics20-1"
+	Version = "bandchain-1"
 )
 
 var (
