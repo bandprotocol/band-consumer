@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	bandtypes "github.com/bandprotocol/chain/x/oracle/types"
+	bandtypes "github.com/bandprotocol/chain/v2/x/oracle/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	clienttypes "github.com/cosmos/cosmos-sdk/x/ibc/core/02-client/types"

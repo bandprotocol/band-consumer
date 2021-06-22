@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	bandoracle "github.com/bandprotocol/chain/x/oracle/types"
+	bandoracle "github.com/bandprotocol/chain/v2/x/oracle/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
