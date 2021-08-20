@@ -21,7 +21,7 @@ service Query {
 }
 
 // QueryResultRequest is the request type for the Query/Result RPC method
-message QueryResultRequest { int64 request_id = 1; }
+message QueryResultRequest { uint64 request_id = 1; }
 
 // QueryResultResponse is the response type for the Query/Result RPC method
 message QueryResultResponse {
@@ -33,4 +33,4 @@ message QueryResultResponse {
 message QueryLatestRequestIDRequest {}
 
 // QueryLatestRequestIDResponse
-message QueryLatestRequestIDResponse { int64 request_id = 1; }
+message QueryLatestRequestIDResponse { uint64 request_id = 1; }

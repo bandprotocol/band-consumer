@@ -1,14 +1,13 @@
 package types
 
 import (
-	bandoracle "github.com/bandprotocol/chain/x/oracle/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewMsgRequestData creates a new MsgRequestData instance.
 func NewMsgRequestData(
-	oracleScriptID bandoracle.OracleScriptID,
+	oracleScriptID uint64,
 	sourceChannel string,
 	calldata []byte,
 	askCount uint64,
@@ -20,7 +19,7 @@ func NewMsgRequestData(
 	sender sdk.AccAddress,
 ) *MsgRequestData {
 	return &MsgRequestData{
-		OracleScriptID: int64(oracleScriptID),
+		OracleScriptID: oracleScriptID,
 		SourceChannel:  sourceChannel,
 		Calldata:       calldata,
 		AskCount:       askCount,

@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	bandtypes "github.com/bandprotocol/chain/x/oracle/types"
+	bandtypes "github.com/bandprotocol/bandchain-packet/packet"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	clienttypes "github.com/cosmos/cosmos-sdk/x/ibc/core/02-client/types"
-	channeltypes "github.com/cosmos/cosmos-sdk/x/ibc/core/04-channel/types"
-	host "github.com/cosmos/cosmos-sdk/x/ibc/core/24-host"
+	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
+	host "github.com/cosmos/ibc-go/modules/core/24-host"
 
 	"github.com/bandprotocol/band-consumer/x/consuming/types"
 )
@@ -42,7 +42,7 @@ func (k Keeper) RequestData(goCtx context.Context, msg *types.MsgRequestData) (*
 	sourcePort := "consuming"
 	packet := bandtypes.NewOracleRequestPacketData(
 		"consuming",
-		bandtypes.OracleScriptID(msg.OracleScriptID),
+		msg.OracleScriptID,
 		msg.Calldata,
 		msg.AskCount,
 		msg.MinCount,

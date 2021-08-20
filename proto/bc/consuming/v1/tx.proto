@@ -17,7 +17,7 @@ message MsgRequestData {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  int64 oracle_script_id = 1 [
+  uint64 oracle_script_id = 1 [
     (gogoproto.customname) = "OracleScriptID",
     (gogoproto.moretags) = "yaml:\"oracle_script_id\""
   ];

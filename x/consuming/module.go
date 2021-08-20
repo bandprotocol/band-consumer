@@ -13,7 +13,6 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	oracletypes "github.com/bandprotocol/chain/x/oracle/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -22,15 +21,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	channeltypes "github.com/cosmos/cosmos-sdk/x/ibc/core/04-channel/types"
-	porttypes "github.com/cosmos/cosmos-sdk/x/ibc/core/05-port/types"
-	host "github.com/cosmos/cosmos-sdk/x/ibc/core/24-host"
+	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
+	porttypes "github.com/cosmos/ibc-go/modules/core/05-port/types"
+	host "github.com/cosmos/ibc-go/modules/core/24-host"
+	ibcexported "github.com/cosmos/ibc-go/modules/core/exported"
 	"github.com/gorilla/mux"
 
 	"github.com/bandprotocol/band-consumer/x/consuming/client/cli"
 	"github.com/bandprotocol/band-consumer/x/consuming/keeper"
 	"github.com/bandprotocol/band-consumer/x/consuming/simulation"
 	"github.com/bandprotocol/band-consumer/x/consuming/types"
+	bandtypes "github.com/bandprotocol/bandchain-packet/packet"
 )
 
 var (
@@ -54,12 +55,12 @@ func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) 
 	types.RegisterInterfaces(registry)
 }
 
-func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	return cdc.MustMarshalJSON(types.DefaultGenesisState())
 }
 
 // Validation check of the Genesis
-func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxEncodingConfig, bz json.RawMessage) error {
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
 	var gs types.GenesisState
 	err := cdc.UnmarshalJSON(bz, &gs)
 	if err != nil {
@@ -129,17 +130,20 @@ func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.Val
 	return []abci.ValidatorUpdate{}
 }
 
-func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data json.RawMessage) []abci.ValidatorUpdate {
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	cdc.MustUnmarshalJSON(data, &genesisState)
 	am.keeper.InitGenesis(ctx, genesisState)
 	return []abci.ValidatorUpdate{}
 }
 
-func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	gs := am.keeper.ExportGenesis(ctx)
 	return cdc.MustMarshalJSON(gs)
 }
+
+// ConsensusVersion implements AppModule/ConsensusVersion.
+func (AppModule) ConsensusVersion() uint64 { return 1 }
 
 //____________________________________________________________________________
 
@@ -288,19 +292,21 @@ func (am AppModule) OnChanCloseConfirm(
 func (am AppModule) OnRecvPacket(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
-) (*sdk.Result, []byte, error) {
-	var data oracletypes.OracleResponsePacketData
+	relayer sdk.AccAddress,
+) ibcexported.Acknowledgement {
+	ack := channeltypes.NewResultAcknowledgement(nil)
+
+	var data bandtypes.OracleResponsePacketData
 	if err := types.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return nil, nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal Oracle response packet data: %s", err.Error())
+		ack = channeltypes.NewErrorAcknowledgement("cannot unmarshal ICS-20 transfer packet data")
 	}
 
-	fmt.Println("Receive result packet", hex.EncodeToString(data.Result))
-	am.keeper.SetResult(ctx, data.RequestID, data.Result)
+	if ack.Success() {
+		fmt.Println("Receive result packet", hex.EncodeToString(data.Result))
+		am.keeper.SetResult(ctx, data.RequestID, data.Result)
+	}
 
-	// NOTE: acknowledgement will be written synchronously during IBC handler execution.
-	return &sdk.Result{
-		Events: ctx.EventManager().Events().ToABCIEvents(),
-	}, nil, nil
+	return ack
 }
 
 // OnAcknowledgementPacket implements the IBCModule interface
@@ -308,6 +314,7 @@ func (am AppModule) OnAcknowledgementPacket(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
 	acknowledgement []byte,
+	relayer sdk.AccAddress,
 ) (*sdk.Result, error) {
 	var ack channeltypes.Acknowledgement
 	if err := types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack); err != nil {
@@ -315,8 +322,8 @@ func (am AppModule) OnAcknowledgementPacket(
 	}
 	switch resp := ack.Response.(type) {
 	case *channeltypes.Acknowledgement_Result:
-		var oracleAck oracletypes.OracleRequestPacketAcknowledgement
-		oracletypes.ModuleCdc.MustUnmarshalJSON(resp.Result, &oracleAck)
+		var oracleAck bandtypes.OracleRequestPacketAcknowledgement
+		types.ModuleCdc.MustUnmarshalJSON(resp.Result, &oracleAck)
 		am.keeper.SetLatestRequestID(ctx, oracleAck.RequestID)
 	case *channeltypes.Acknowledgement_Error:
 		// TODO: Handle timeout request
@@ -337,28 +344,9 @@ func (am AppModule) OnAcknowledgementPacket(
 func (am AppModule) OnTimeoutPacket(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
+	relayer sdk.AccAddress,
 ) (*sdk.Result, error) {
-	return &sdk.Result{}, nil
-	// var data types.FungibleTokenPacketData
-	// if err := types.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-	// 	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
-	// }
-	// // refund tokens
-	// if err := am.keeper.OnTimeoutPacket(ctx, packet, data); err != nil {
-	// 	return nil, err
-	// }
-
-	// ctx.EventManager().EmitEvent(
-	// 	sdk.NewEvent(
-	// 		types.EventTypeTimeout,
-	// 		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-	// 		sdk.NewAttribute(types.AttributeKeyRefundReceiver, data.Sender),
-	// 		sdk.NewAttribute(types.AttributeKeyRefundDenom, data.Denom),
-	// 		sdk.NewAttribute(types.AttributeKeyRefundAmount, fmt.Sprintf("%d", data.Amount)),
-	// 	),
-	// )
-
-	// return &sdk.Result{
-	// 	Events: ctx.EventManager().Events().ToABCIEvents(),
-	// }, nil
+	return &sdk.Result{
+		Events: ctx.EventManager().Events().ToABCIEvents(),
+	}, nil
 }

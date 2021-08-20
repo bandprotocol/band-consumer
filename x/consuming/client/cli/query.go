@@ -38,7 +38,7 @@ func GetCmdReadResult() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			id, err := strconv.ParseInt(args[0], 10, 64)
+			id, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
 				return err
 			}

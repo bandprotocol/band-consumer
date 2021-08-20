@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	bandoracle "github.com/bandprotocol/chain/x/oracle/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -63,11 +62,10 @@ $ %s tx consuming request 1 --calldata 1234abcdef --requested-validator-count 4 
 				return err
 			}
 
-			int64OracleScriptID, err := strconv.ParseInt(args[0], 10, 64)
+			oid, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
 				return err
 			}
-			oracleScriptID := bandoracle.OracleScriptID(int64OracleScriptID)
 
 			askCount, err := strconv.ParseUint(args[1], 10, 64)
 			if err != nil {
@@ -114,7 +112,7 @@ $ %s tx consuming request 1 --calldata 1234abcdef --requested-validator-count 4 
 			}
 
 			msg := types.NewMsgRequestData(
-				oracleScriptID,
+				oid,
 				channel,
 				calldata,
 				askCount,
