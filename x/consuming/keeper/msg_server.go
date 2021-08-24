@@ -47,7 +47,6 @@ func (k Keeper) RequestData(goCtx context.Context, msg *types.MsgRequestData) (*
 		msg.AskCount,
 		msg.MinCount,
 		msg.FeeLimit,
-		msg.RequestKey,
 		msg.PrepareGas,
 		msg.ExecuteGas,
 	)
